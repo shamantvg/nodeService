@@ -1,0 +1,19 @@
+{
+  "name": "node_api",
+  "version": "1.0.0",
+  "description": "asset management api",
+  "main": "server.js",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "mssql": "^3.3.0",
+    "mysql": "^2.18.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "author": "Shamant",
+  "license": "ISC"
+}
