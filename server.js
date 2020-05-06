@@ -3,6 +3,8 @@ const jwt = require("jsonwebtoken");
 const bodyParser = require("body-parser");
 const app = express();
 const mysql = require('mysql');
+const md5 = require('md5');
+const nodemailer = require('nodemailer');
 
 // Body Parser Middleware
 app.use(bodyParser.json());
@@ -38,6 +40,7 @@ conn.connect((err) => {
     console.log('Mysql Connected...');
 });
 
+
 function verifyToken(req, res, next) {
     if (!req.headers.authorization) {
         return res.status(401).send('Unauthorized request.');
@@ -56,10 +59,58 @@ function verifyToken(req, res, next) {
 
 }
 
+
+//function to get present time
+function getTimeNow() {
+    const start = Date.now();
+    let timeP = Math.floor(start / 1000);
+    return timeP;
+}
+
+function getHash() {
+    const start = Date.now();
+    let message = md5('hash-shamant') + Math.floor(start / 1000);
+    return md5(message);
+}
+
+function mailingTo(fromM, ToM, Sub, conT) {
+
+}
+
 //testing api
 app.get('/api/test', (req, res) => {
-    console.log(req.body);
-    res.status(200).send(req.body);
+
+    var fromM = "shamantvg@yahoo.com";
+    var ToM = "shamantvg@gmail.com,rahulvg12345@gmail.com";
+    var Sub = "Node emails";
+    var conT = "<h1>Hi, <br> Shamant sent a mail to you. <br> Thanks</h1>";
+
+    var transport = nodemailer.createTransport({
+        host: "smtp.mailtrap.io",
+        port: 2525,
+        auth: {
+            user: "c127deb54c77e4",
+            pass: "6bd3edac978e37"
+        }
+    });
+
+
+    const message = {
+        from: fromM, // Sender address
+        to: ToM, // List of recipients
+        subject: Sub, // Subject line
+        html: conT // Plain text body
+    };
+
+    transport.sendMail(message, function(err, info) {
+        if (err) {
+            res.status(500).send({ "Failed": "500" });
+        } else {
+            //console.log(info);
+            res.status(200).send({ "Success": "200" });
+        }
+    });
+
 });
 
 
@@ -300,4 +351,134 @@ app.post('/employee', verifyToken, (req, res) => {
 app.get('/CheckSessionToken', verifyToken, (req, res) => {
 
     res.status(200).send(JSON.stringify({ "status": "200" }));
+});
+
+//employee forgot password
+app.post('/forgotPassword', (req, res) => {
+
+    var adminId = req.body.adminId;
+
+    let sql = "SELECT E.id,E.loginAccess,E.adminAccess FROM employee E WHERE E.adminId = '" + adminId + "' LIMIT 1";
+    let query = conn.query(sql, (err, results) => {
+        if (err) {
+            //throw err;
+            console.log(err);
+        } else {
+            //console.log("length--->" + results.length);
+            if (results.length > 0) {
+                let id = results[0].id;
+                // let loginAccess = results[0].loginAccess;
+                // let adminAccess = results[0].adminAccess;
+                let resetToken = getHash();
+                let expiryTime = getTimeNow() + (60 * 60); // one hour expiry time
+
+                let sql_update = "Update employee SET resetToken = '" + resetToken + "', resetExpiry= '" + expiryTime + "' where id = '" + id + "'";
+                let query = conn.query(sql_update, (err_upt, results_upt) => {
+                    if (err_upt) {
+                        throw err_upt;
+                    } else {
+                        res.status(200).send({ resetToken });
+                        // var fromM = "shamantvg@yahoo.com";
+                        // var ToM = "shamantvg@gmail.com,rahulvg12345@gmail.com";
+                        // var Sub = "Node emails";
+                        // var conT = "<h1>Hi, <br> Shamant sent a mail to you. <br> Thanks</h1>";
+
+                        // var transport = nodemailer.createTransport({
+                        //     host: "smtp.mailtrap.io",
+                        //     port: 2525,
+                        //     auth: {
+                        //         user: "c127deb54c77e4",
+                        //         pass: "6bd3edac978e37"
+                        //     }
+                        // });
+
+
+                        // const message = {
+                        //     from: fromM, // Sender address
+                        //     to: ToM, // List of recipients
+                        //     subject: Sub, // Subject line
+                        //     html: conT // Plain text body
+                        // };
+
+                        // transport.sendMail(message, function (err, info) {
+                        //     if (err) {
+                        //         res.status(500).send({ "Failed": "500" });
+                        //     } else {
+                        //         //console.log(info);
+                        //         res.status(200).send({ "Success": "200" });
+                        //     }
+                        // });
+                    }
+
+
+                });
+
+            } else {
+                let message = "Please enter valid Admin Id";
+                res.status(401).send({ message });
+            }
+
+        }
+        //res.status(200).send(results);
+
+        //res.send(JSON.stringify({ "status": 200, "error": null, "response": results }));
+    });
+});
+
+app.get('/getResetUser/:adminToken', (req, res) => {
+
+    let timenow = getTimeNow(); // one hour expiry time
+
+    let sql = "SELECT E.firstname from employee E WHERE E.resetToken = '" + req.params.adminToken + "' and E.resetExpiry > '" + timenow + "' ";
+    let query = conn.query(sql, (err, results) => {
+        if (err) {
+            //throw err;
+            console.log(err);
+        } else {
+            //console.log("length--->" + results.length);
+            if (results.length > 0) {
+                let firstname = results[0].firstname;
+                res.status(200).send({ firstname });
+            } else {
+                let message = "Please enter valid details";
+                res.status(401).send({ message });
+            }
+
+        }
+    });
+});
+
+//employee reset Password
+app.post('/resetPassword', (req, res) => {
+
+    var pswd = req.body.pswd;
+    var htoken = req.body.htoken;
+
+    let timenow = getTimeNow(); // one hour expiry time
+
+    let sql = "SELECT E.firstname from employee E WHERE E.resetToken = '" + htoken + "' and E.resetExpiry > '" + timenow + "' ";
+    let query = conn.query(sql, (err, results) => {
+        if (err) {
+            //throw err;
+            console.log(err);
+        } else {
+            //console.log("length--->" + results.length);
+            if (results.length > 0) {
+                let sql_update = "Update employee SET resetToken = '', resetExpiry= '',password='" + pswd + "' where resetToken = '" + htoken + "'";
+                let query_update = conn.query(sql_update, (err_update, result) => {
+                    if (err_update) throw err_update;
+                    //console.log(err);
+                    //if (result.affectedRows > 0) {
+                    res.status(200).send({ 'success': '200' });
+                    //}
+
+                });
+            } else {
+                let message = "Sorry, Your session has been expired !!!";
+                res.status(401).send({ message });
+            }
+
+        }
+    });
+
 });
