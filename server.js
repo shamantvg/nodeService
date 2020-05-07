@@ -5,6 +5,7 @@ const app = express();
 const mysql = require('mysql');
 const md5 = require('md5');
 const nodemailer = require('nodemailer');
+var fs = require('fs');
 
 // Body Parser Middleware
 app.use(bodyParser.json());
@@ -80,37 +81,48 @@ function mailingTo(fromM, ToM, Sub, conT) {
 //testing api
 app.get('/api/test', (req, res) => {
 
-    var fromM = "shamantvg@yahoo.com";
-    var ToM = "shamantvg@gmail.com,rahulvg12345@gmail.com";
-    var Sub = "Node emails";
-    var conT = "<h1>Hi, <br> Shamant sent a mail to you. <br> Thanks</h1>";
+    try {
+        var data = fs.readFileSync('mailtemp.html', 'utf8');
+        // declare vars,
+        let fromMail = 'rahulvg12345@gmail.com';
+        let toMail = 'shamantvg@gmail.com';
+        let subject = 'Reset Password';
+        //let html = data;
 
-    var transport = nodemailer.createTransport({
-        host: "smtp.mailtrap.io",
-        port: 2525,
-        auth: {
-            user: "c127deb54c77e4",
-            pass: "6bd3edac978e37"
-        }
-    });
+        var tokenNew = "SG000123";
+
+        let html = data.replace(/SG001/gi, tokenNew);
 
 
-    const message = {
-        from: fromM, // Sender address
-        to: ToM, // List of recipients
-        subject: Sub, // Subject line
-        html: conT // Plain text body
-    };
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: fromMail,
+                pass: 'rahu0088'
+            }
+        });
 
-    transport.sendMail(message, function(err, info) {
-        if (err) {
-            res.status(500).send({ "Failed": "500" });
-        } else {
-            //console.log(info);
-            res.status(200).send({ "Success": "200" });
-        }
-    });
+        // email options
+        let mailOptions = {
+            from: fromMail,
+            to: toMail,
+            subject: subject,
+            html: html
+        };
 
+
+        //send email
+        transporter.sendMail(mailOptions, (error, response) => {
+            if (error) {
+                console.log(error);
+                res.status(500).send({ error });
+            }
+            console.log(response);
+            res.status(200).send({ "message": "success" });
+        });
+    } catch (e) {
+        console.log('Error:', e.stack);
+    }
 });
 
 
@@ -378,36 +390,46 @@ app.post('/forgotPassword', (req, res) => {
                         throw err_upt;
                     } else {
                         res.status(200).send({ resetToken });
-                        // var fromM = "shamantvg@yahoo.com";
-                        // var ToM = "shamantvg@gmail.com,rahulvg12345@gmail.com";
-                        // var Sub = "Node emails";
-                        // var conT = "<h1>Hi, <br> Shamant sent a mail to you. <br> Thanks</h1>";
+                        // try {
+                        //     var data = fs.readFileSync('mailtemp.html', 'utf8');
+                        //     // declare vars,
+                        //     let fromMail = 'fromemail ID';
+                        //     let toMail = 'toemailId';
+                        //     let subject = 'Reset Password';
+                        //     //let html = data;
 
-                        // var transport = nodemailer.createTransport({
-                        //     host: "smtp.mailtrap.io",
-                        //     port: 2525,
-                        //     auth: {
-                        //         user: "c127deb54c77e4",
-                        //         pass: "6bd3edac978e37"
-                        //     }
-                        // });
+                        //     let html = data.replace(/SG001/gi, resetToken);
 
 
-                        // const message = {
-                        //     from: fromM, // Sender address
-                        //     to: ToM, // List of recipients
-                        //     subject: Sub, // Subject line
-                        //     html: conT // Plain text body
-                        // };
+                        //     const transporter = nodemailer.createTransport({
+                        //         service: 'gmail',
+                        //         auth: {
+                        //             user: fromMail,
+                        //             pass: 'yourpassword'
+                        //         }
+                        //     });
 
-                        // transport.sendMail(message, function (err, info) {
-                        //     if (err) {
-                        //         res.status(500).send({ "Failed": "500" });
-                        //     } else {
-                        //         //console.log(info);
-                        //         res.status(200).send({ "Success": "200" });
-                        //     }
-                        // });
+                        //     // email options
+                        //     let mailOptions = {
+                        //         from: fromMail,
+                        //         to: toMail,
+                        //         subject: subject,
+                        //         html: html
+                        //     };
+
+
+                        //     //send email
+                        //     transporter.sendMail(mailOptions, (error, response) => {
+                        //         if (error) {
+                        //             console.log(error);
+                        //             res.status(500).send({ error });
+                        //         }
+                        //         console.log(response);
+                        //         res.status(200).send({ resetToken });
+                        //     });
+                        // } catch (e) {
+                        //     console.log('Error:', e.stack);
+                        // }
                     }
 
 
