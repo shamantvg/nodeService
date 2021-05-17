@@ -84,8 +84,8 @@ app.get('/api/test', (req, res) => {
     try {
         var data = fs.readFileSync('mailtemp.html', 'utf8');
         // declare vars,
-        let fromMail = 'rahulvg12345@gmail.com';
-        let toMail = 'shamantvg@gmail.com';
+        let fromMail = 'your_name@gmail.com';
+        let toMail = 'contact_addrr@gmail.com';
         let subject = 'Reset Password';
         //let html = data;
 
@@ -98,7 +98,7 @@ app.get('/api/test', (req, res) => {
             service: 'gmail',
             auth: {
                 user: fromMail,
-                pass: 'rahu0088'
+                pass: 'yourpassword_here'
             }
         });
 
